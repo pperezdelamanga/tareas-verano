@@ -1,0 +1,572 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="theme-color" content="#1A3A6B" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="apple-mobile-web-app-title" content="Verano 🎮" />
+<link rel="manifest" href="manifest.json" />
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png" />
+<title>Marcador de verano</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --cream: #FFF8EF;
+    --ink: #2B2420;
+    --ink-soft: #6B6258;
+    --line: #E7DCC9;
+    --badge-bg: #F1EAD8;
+    --dario: #2F6FED;
+    --dario-tint: #DCEAFE;
+    --dario-deep: #163E85;
+    --hugo: #F2762E;
+    --hugo-tint: #FDE6D4;
+    --hugo-deep: #8A3D0F;
+    --good: #3F9142;
+    --good-tint: #E3F2DE;
+    --good-deep: #235425;
+    --radius: 16px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  body {
+    background: var(--cream);
+    color: var(--ink);
+    font-family: 'Inter', sans-serif;
+    line-height: 1.5;
+    padding: env(safe-area-inset-top, 0) 0 80px;
+    min-height: 100dvh;
+  }
+  h1, h2, h3 { font-family: 'Baloo 2', sans-serif; font-weight: 700; }
+
+  /* ── Top bar ── */
+  .topbar {
+    background: #1A3A6B;
+    color: white;
+    padding: 14px 16px 12px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+  }
+  .topbar h1 { font-size: 19px; letter-spacing: -.01em; }
+  .topbar .date { font-size: 12px; opacity: .75; font-family: 'Inter', sans-serif; font-weight: 400; }
+
+  /* ── Tab bar ── */
+  .tabbar {
+    display: flex;
+    background: white;
+    border-bottom: 1px solid var(--line);
+    position: sticky;
+    top: 54px;
+    z-index: 9;
+  }
+  .tab {
+    flex: 1;
+    padding: 11px 8px;
+    text-align: center;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--ink-soft);
+    cursor: pointer;
+    border-bottom: 3px solid transparent;
+    transition: color .15s, border-color .15s;
+    user-select: none;
+  }
+  .tab.active-dario  { color: var(--dario);  border-color: var(--dario); }
+  .tab.active-hugo   { color: var(--hugo);   border-color: var(--hugo); }
+  .tab.active-plan   { color: var(--good);   border-color: var(--good); }
+
+  /* ── Panels ── */
+  .panel { display: none; padding: 16px 14px; }
+  .panel.active { display: block; }
+
+  /* ── Score banner ── */
+  .score-banner {
+    border-radius: var(--radius);
+    padding: 14px 16px;
+    margin-bottom: 14px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+  .score-cell { text-align: center; }
+  .score-cell .val {
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 700;
+    font-size: 32px;
+    line-height: 1;
+    display: block;
+  }
+  .score-cell .lbl { font-size: 11px; opacity: .85; margin-top: 3px; display: block; }
+  .score-divider {
+    width: 1px;
+    background: rgba(255,255,255,.3);
+    align-self: stretch;
+    justify-self: center;
+  }
+
+  /* ── Section label ── */
+  .section-label {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--ink-soft);
+    text-transform: uppercase;
+    letter-spacing: .05em;
+    margin: 16px 0 8px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .section-label .dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  /* ── Task rows ── */
+  .task-list { background: white; border-radius: var(--radius); overflow: hidden; border: 1px solid var(--line); }
+  .task-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 11px 14px;
+    border-bottom: 1px solid var(--line);
+    cursor: pointer;
+    transition: background .1s;
+    -webkit-user-select: none;
+    user-select: none;
+  }
+  .task-row:last-child { border-bottom: none; }
+  .task-row:active { background: var(--cream); }
+  .task-row input[type=checkbox] { width: 20px; height: 20px; flex-shrink: 0; cursor: pointer; }
+  .task-row .task-text { flex: 1; font-size: 14px; line-height: 1.4; }
+  .task-row.checked .task-text { text-decoration: line-through; color: var(--ink-soft); }
+  .badge {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 3px 8px;
+    border-radius: 8px;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+
+  /* ── Streak ── */
+  .streak-row { display: flex; gap: 5px; align-items: center; flex-wrap: wrap; margin-top: 4px; }
+  .day-dot { width: 14px; height: 14px; border-radius: 50%; background: var(--line); }
+  .day-dot.good { background: var(--good); }
+  .streak-label { font-size: 12px; color: var(--ink-soft); margin-left: 4px; }
+
+  /* ── Plan cards ── */
+  .plan-grid { display: grid; gap: 10px; margin-bottom: 14px; }
+  .plan-card {
+    background: white;
+    border: 1.5px solid var(--line);
+    border-radius: 12px;
+    padding: 13px 15px;
+    font-size: 14px;
+    cursor: pointer;
+    transition: border-color .15s, background .15s;
+    -webkit-user-select: none;
+    user-select: none;
+  }
+  .plan-card:active { background: var(--cream); }
+  .plan-card.locked { opacity: .45; cursor: not-allowed; }
+  .plan-card.chosen {
+    border-color: var(--good);
+    background: var(--good-tint);
+    color: var(--good-deep);
+    font-weight: 600;
+  }
+  .current-plan-box {
+    background: var(--good-tint);
+    color: var(--good-deep);
+    border-radius: 12px;
+    padding: 13px 15px;
+    font-size: 14px;
+    margin-bottom: 12px;
+    line-height: 1.5;
+  }
+  .add-row { display: flex; gap: 8px; margin-top: 6px; }
+  .add-row input {
+    flex: 1;
+    padding: 10px 12px;
+    border: 1.5px solid var(--line);
+    border-radius: 10px;
+    font-size: 14px;
+    font-family: 'Inter', sans-serif;
+    background: white;
+    color: var(--ink);
+  }
+  .add-row input:focus { outline: none; border-color: var(--good); }
+  .add-row button {
+    padding: 10px 16px;
+    border: 1.5px solid var(--line);
+    border-radius: 10px;
+    background: white;
+    font-size: 14px;
+    font-weight: 600;
+    font-family: 'Inter', sans-serif;
+    cursor: pointer;
+    color: var(--ink);
+  }
+  .plan-status {
+    font-size: 13px;
+    color: var(--ink-soft);
+    margin-bottom: 14px;
+    line-height: 1.5;
+  }
+  .unlock-banner {
+    background: var(--good-tint);
+    color: var(--good-deep);
+    border-radius: 10px;
+    padding: 10px 14px;
+    font-size: 13px;
+    font-weight: 600;
+    margin-bottom: 14px;
+  }
+
+  /* ── Install hint ── */
+  .install-hint {
+    background: #EFF6FF;
+    border: 1px solid #BFDBFE;
+    border-radius: 12px;
+    padding: 12px 14px;
+    font-size: 13px;
+    color: #1E40AF;
+    margin-bottom: 16px;
+    display: none;
+    line-height: 1.5;
+  }
+  .install-hint.show { display: block; }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div>
+    <h1>Marcador de verano 🎮</h1>
+    <span class="date" id="today-label"></span>
+  </div>
+</div>
+
+<div class="tabbar">
+  <div class="tab active-dario" data-tab="dario" onclick="switchTab('dario')">Darío</div>
+  <div class="tab" data-tab="hugo" onclick="switchTab('hugo')">Hugo</div>
+  <div class="tab" data-tab="plan" onclick="switchTab('plan')">Plan finde 🌟</div>
+</div>
+
+<div id="panel-dario" class="panel active"></div>
+<div id="panel-hugo" class="panel"></div>
+<div id="panel-plan" class="panel"></div>
+
+<script>
+// ── Config ────────────────────────────────────────────────────────────────────
+var WEEK_GOAL = 5;
+var WELCOME_MIN = 20;
+
+var TASKS = {
+  dario: [
+    {id:'d1', label:'Hacer la cama y ordenar la habitación', min:5},
+    {id:'d2', label:'Ducha y rutina de higiene', min:5},
+    {id:'d3', label:'Tarea doméstica (lavavajillas, tender la ropa...)', min:5},
+    {id:'d4', label:'Lectura libre, 20-30 min', min:10},
+    {id:'d5', label:'Reto cognitivo: ajedrez, lógica, escritura o proyecto propio', min:10},
+    {id:'d6', label:'Actividad física o al aire libre, 20-30 min', min:5},
+  ],
+  hugo: [
+    {id:'h1', label:'Hacer la cama', min:5},
+    {id:'h2', label:'Recoger los juguetes y su cuarto', min:5},
+    {id:'h3', label:'Vestirse solo y aseo (dientes y cara)', min:5},
+    {id:'h4', label:'Ayudar a poner o recoger la mesa', min:5},
+    {id:'h5', label:'Leer o escuchar un cuento, 15 min', min:10},
+    {id:'h6', label:'Reto de lógica, puzzle o dibujo dirigido', min:10},
+  ]
+};
+
+var BONUS = {
+  dario: [
+    {id:'db1', label:'Ayudar a Hugo sin que se lo pidan', min:5},
+    {id:'db2', label:'Resolver un conflicto hablando en vez de gritar', min:5},
+    {id:'db3', label:'Mostrar paciencia en un momento difícil', min:5},
+    {id:'db4', label:'Tener un gesto bonito por iniciativa propia', min:5},
+  ],
+  hugo: [
+    {id:'hb1', label:'Jugar solo un rato mientras Darío tiene su momento de tranquilidad', min:5},
+    {id:'hb2', label:'Decir "por favor" y "gracias" sin que se lo recuerden', min:5},
+    {id:'hb3', label:'Mantener la calma en una rabieta o frustración', min:5},
+    {id:'hb4', label:'Hacer algo bueno por su cuenta, sin que se lo pidan', min:5},
+  ]
+};
+
+var PLAN_DEFAULTS = [
+  'Tarde de cine en casa con palomitas',
+  'Noche de juegos de mesa con chuches',
+  'Helado especial por la tarde',
+  'Cocinar juntos algo especial (tortitas, pizza casera)',
+  'Excursión corta a un parque o zona natural cercana',
+  'Invitar a un amigo a merendar y a la piscina',
+  'Comida o cena en vuestro restaurante favorito'
+];
+
+var KIDS = [
+  {id:'dario', name:'Darío', age:10, color:'--dario', tint:'--dario-tint', deep:'--dario-deep'},
+  {id:'hugo',  name:'Hugo',  age:6,  color:'--hugo',  tint:'--hugo-tint',  deep:'--hugo-deep'}
+];
+
+// ── Date helpers ──────────────────────────────────────────────────────────────
+function pad(n){ return n<10?'0'+n:''+n; }
+function dateKey(d){ return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate()); }
+function addDays(d,n){ var r=new Date(d); r.setDate(r.getDate()+n); return r; }
+
+var today = new Date();
+var todayKey = dateKey(today);
+
+// ── localStorage helpers ──────────────────────────────────────────────────────
+function lsGet(key){ try{ return localStorage.getItem(key); }catch(e){ return null; } }
+function lsSet(key,val){ try{ localStorage.setItem(key,val); }catch(e){} }
+
+function loadDay(kidId, key){
+  var raw = lsGet('progress:'+kidId+':'+key);
+  if(!raw) return {tasks:[], bonus:[]};
+  try{ var p=JSON.parse(raw); return {tasks:p.tasks||[], bonus:p.bonus||[]}; }
+  catch(e){ return {tasks:[], bonus:[]}; }
+}
+function saveDay(kidId, key, data){
+  lsSet('progress:'+kidId+':'+key, JSON.stringify(data));
+}
+function sumMin(list, ids){
+  return list.filter(function(t){ return ids.indexOf(t.id)!==-1; })
+             .reduce(function(s,t){ return s+t.min; }, 0);
+}
+
+// ── State ─────────────────────────────────────────────────────────────────────
+var state = { dario:{today:{tasks:[],bonus:[]}, week:[]}, hugo:{today:{tasks:[],bonus:[]}, week:[]} };
+
+// ── Tab switching ──────────────────────────────────────────────────────────────
+var currentTab = 'dario';
+function switchTab(id){
+  currentTab = id;
+  document.querySelectorAll('.tab').forEach(function(t){
+    t.className = 'tab' + (t.dataset.tab===id ? ' active-'+id : '');
+  });
+  document.querySelectorAll('.panel').forEach(function(p){
+    p.classList.toggle('active', p.id==='panel-'+id);
+  });
+}
+
+// ── Render a kid panel ────────────────────────────────────────────────────────
+function renderKid(kid){
+  var d = state[kid.id];
+  var color = 'var('+kid.color+')';
+  var tint  = 'var('+kid.tint+')';
+  var deep  = 'var('+kid.deep+')';
+
+  // Available today (earned yesterday)
+  var yKey = dateKey(addDays(today,-1));
+  var yData = loadDay(kid.id, yKey);
+  var firstEver = !lsGet('app:started');
+  var avail = sumMin(TASKS[kid.id], yData.tasks) + sumMin(BONUS[kid.id], yData.bonus);
+  if(firstEver && yData.tasks.length===0) avail = WELCOME_MIN;
+
+  // Earned today so far
+  var earning = sumMin(TASKS[kid.id], d.today.tasks) + sumMin(BONUS[kid.id], d.today.bonus);
+
+  // Streak
+  var week = computeWeek(kid.id);
+  var goodCount = week.filter(Boolean).length;
+
+  var html = '';
+
+  // Score banner
+  html += '<div class="score-banner" style="background:'+deep+';color:white;">';
+  html += '<div class="score-cell">';
+  html += '<span class="val">'+avail+'</span>';
+  html += '<span class="lbl">⏱ min consola HOY</span>';
+  html += '</div>';
+  html += '<div style="width:1px;background:rgba(255,255,255,.3);align-self:stretch;"></div>';
+  html += '<div class="score-cell">';
+  html += '<span class="val">'+earning+'</span>';
+  html += '<span class="lbl">🎯 ganando para MAÑANA</span>';
+  html += '</div>';
+  html += '</div>';
+
+  // Tasks
+  html += '<div class="section-label"><span class="dot" style="background:'+color+'"></span>Tareas de hoy</div>';
+  html += '<div class="task-list" id="tasks-'+kid.id+'">';
+  TASKS[kid.id].forEach(function(t){
+    var checked = d.today.tasks.indexOf(t.id)!==-1;
+    html += taskRowHTML(kid, t, checked, false);
+  });
+  html += '</div>';
+
+  // Bonus
+  html += '<div class="section-label"><span class="dot" style="background:var(--good)"></span>Bonus por buen comportamiento</div>';
+  html += '<div class="task-list" id="bonus-'+kid.id+'">';
+  BONUS[kid.id].forEach(function(t){
+    var checked = d.today.bonus.indexOf(t.id)!==-1;
+    html += taskRowHTML(kid, t, checked, true);
+  });
+  html += '</div>';
+
+  // Streak
+  html += '<div class="section-label"><span class="dot" style="background:var(--good)"></span>Constancia esta semana</div>';
+  html += '<div class="streak-row">';
+  week.forEach(function(g){ html += '<div class="day-dot'+(g?' good':'')+'"></div>'; });
+  html += '<span class="streak-label">'+goodCount+'/7 días completos (meta: '+WEEK_GOAL+')</span>';
+  html += '</div>';
+
+  document.getElementById('panel-'+kid.id).innerHTML = html;
+
+  // Bind checkboxes
+  document.querySelectorAll('#panel-'+kid.id+' input[type=checkbox]').forEach(function(cb){
+    cb.addEventListener('change', function(e){
+      e.stopPropagation();
+      handleCheck(cb, kid);
+    });
+  });
+  document.querySelectorAll('#panel-'+kid.id+' .task-row').forEach(function(row){
+    row.addEventListener('click', function(e){
+      if(e.target.tagName==='INPUT') return;
+      var cb = row.querySelector('input[type=checkbox]');
+      cb.checked = !cb.checked;
+      handleCheck(cb, kid);
+    });
+  });
+}
+
+function taskRowHTML(kid, item, checked, isBonus){
+  var color = isBonus ? 'var(--good)' : 'var('+kid.color+')';
+  var bg    = isBonus ? 'var(--good-tint)' : 'var(--badge-bg)';
+  var fc    = isBonus ? 'var(--good-deep)' : 'var(--ink-soft)';
+  return '<div class="task-row'+(checked?' checked':'')+'" data-id="'+item.id+'" data-type="'+(isBonus?'bonus':'task')+'">'
+    +'<input type="checkbox" style="accent-color:'+color+';" '+(checked?'checked':'')+'>'
+    +'<span class="task-text">'+escHtml(item.label)+'</span>'
+    +'<span class="badge" style="background:'+bg+';color:'+fc+';">+'+item.min+' min</span>'
+    +'</div>';
+}
+
+function handleCheck(cb, kid){
+  var row = cb.closest('.task-row');
+  var id = row.dataset.id;
+  var type = row.dataset.type;
+  var arr = type==='bonus' ? state[kid.id].today.bonus : state[kid.id].today.tasks;
+  var idx = arr.indexOf(id);
+  if(cb.checked){ if(idx===-1) arr.push(id); }
+  else { if(idx!==-1) arr.splice(idx,1); }
+  saveDay(kid.id, todayKey, state[kid.id].today);
+  if(!lsGet('app:started')) lsSet('app:started','yes');
+  renderKid(kid);
+  renderPlan();
+}
+
+function computeWeek(kidId){
+  var arr = [];
+  for(var i=6; i>=0; i--){
+    var dk = dateKey(addDays(today,-i));
+    var dd = (dk===todayKey) ? state[kidId].today : loadDay(kidId,dk);
+    var tm = sumMin(TASKS[kidId], dd.tasks);
+    var bm = sumMin(BONUS[kidId], dd.bonus);
+    arr.push(tm>=40 && bm>=5);
+  }
+  return arr;
+}
+
+// ── Plan panel ────────────────────────────────────────────────────────────────
+function renderPlan(){
+  var dWeek = computeWeek('dario').filter(Boolean).length;
+  var hWeek = computeWeek('hugo').filter(Boolean).length;
+  var unlocked = dWeek>=WEEK_GOAL && hWeek>=WEEK_GOAL;
+
+  var custom = [];
+  try{ custom = JSON.parse(lsGet('weekendplan:options')||'[]'); }catch(e){}
+  var allPlans = PLAN_DEFAULTS.concat(custom);
+
+  var currentPlan = null;
+  try{ currentPlan = JSON.parse(lsGet('weekendplan:current')||'null'); }catch(e){}
+  var nextChooser = lsGet('weekendplan:nextChooser') || 'Darío';
+
+  var html = '';
+
+  if(unlocked){
+    html += '<div class="unlock-banner">🌟 ¡Semana completada! Le toca elegir a <strong>'+escHtml(nextChooser)+'</strong>.</div>';
+  } else {
+    html += '<p class="plan-status">Se desbloquea cuando los dos completen sus tareas y al menos un bono '
+      +WEEK_GOAL+' días de los últimos 7.<br>'
+      +'Darío: '+dWeek+'/7 · Hugo: '+hWeek+'/7</p>';
+  }
+
+  if(currentPlan && currentPlan.plan){
+    html += '<div class="current-plan-box">Plan elegido para este finde: <strong>'+escHtml(currentPlan.plan)+'</strong><br>'
+      +'<span style="font-size:12px;opacity:.8;">Elegido por '+escHtml(currentPlan.chosenBy)+'</span></div>';
+  }
+
+  html += '<div class="plan-grid">';
+  allPlans.forEach(function(p){
+    var chosen = currentPlan && currentPlan.plan===p;
+    var cls = 'plan-card'+(chosen?' chosen':'')+((!unlocked&&!chosen)?' locked':'');
+    html += '<div class="'+cls+'" data-plan="'+encodeURIComponent(p)+'">'+escHtml(p)+'</div>';
+  });
+  html += '</div>';
+
+  html += '<div class="add-row"><input type="text" id="new-plan-input" placeholder="Añadir una idea nueva…" />'
+        +'<button id="add-plan-btn">+</button></div>';
+
+  document.getElementById('panel-plan').innerHTML = html;
+
+  document.querySelectorAll('.plan-card').forEach(function(card){
+    card.addEventListener('click', function(){
+      if(!unlocked) return;
+      var plan = decodeURIComponent(card.dataset.plan);
+      var cp = {plan:plan, chosenBy:nextChooser, date:todayKey};
+      lsSet('weekendplan:current', JSON.stringify(cp));
+      var nc = (nextChooser==='Darío') ? 'Hugo' : 'Darío';
+      lsSet('weekendplan:nextChooser', nc);
+      renderPlan();
+    });
+  });
+
+  document.getElementById('add-plan-btn').addEventListener('click', function(){
+    var inp = document.getElementById('new-plan-input');
+    var val = inp.value.trim();
+    if(!val) return;
+    custom.push(val);
+    lsSet('weekendplan:options', JSON.stringify(custom));
+    inp.value='';
+    renderPlan();
+  });
+  document.getElementById('new-plan-input').addEventListener('keydown', function(e){
+    if(e.key==='Enter') document.getElementById('add-plan-btn').click();
+  });
+}
+
+// ── Utils ─────────────────────────────────────────────────────────────────────
+function escHtml(s){
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+function init(){
+  document.getElementById('today-label').textContent =
+    today.toLocaleDateString('es-ES',{weekday:'long',day:'numeric',month:'long'});
+
+  KIDS.forEach(function(kid){
+    state[kid.id].today = loadDay(kid.id, todayKey);
+    renderKid(kid);
+  });
+  renderPlan();
+
+  // Service worker
+  if('serviceWorker' in navigator){
+    navigator.serviceWorker.register('sw.js').catch(function(){});
+  }
+}
+
+init();
+</script>
+</body>
+</html>
