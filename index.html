@@ -96,11 +96,25 @@
   .empty .emoji { font-size: 32px; display: block; margin-bottom: 8px; }
 
   /* ── CATALOG ITEMS (tareas / penaliz) ── */
-  .cat-row { display: flex; align-items: center; gap: 10px; padding: 12px 14px; border-bottom: 1px solid var(--border); }
+  .cat-row { display: flex; align-items: center; gap: 10px; padding: 12px 14px; border-bottom: 1px solid var(--border); cursor: pointer; transition: background .12s; }
   .cat-row:last-child { border-bottom: none; }
+  .cat-row:active { background: var(--bg); }
   .cat-row .cat-label { flex: 1; font-size: 14px; }
+  .cat-row .tap-hint { font-size: 11px; color: var(--muted); }
   .cat-row .icon-btn { background: none; border: none; font-size: 16px; cursor: pointer; padding: 4px; color: var(--muted); }
   .add-cat-btn { display: flex; align-items: center; justify-content: center; gap: 6px; padding: 12px; background: none; border: none; border-top: 1px solid var(--border); width: 100%; cursor: pointer; font-size: 14px; color: var(--dario); font-weight: 600; }
+
+  /* ── QUICK ASSIGN SHEET ── */
+  .quick-sheet { background: var(--card); border-radius: 20px 20px 0 0; padding: 20px 20px 36px; width: 100%; }
+  .quick-title { font-size: 15px; font-weight: 700; margin-bottom: 4px; }
+  .quick-sub { font-size: 13px; color: var(--muted); margin-bottom: 16px; }
+  .quick-kids { display: flex; gap: 10px; margin-bottom: 16px; }
+  .kid-toggle { flex: 1; padding: 14px 8px; border-radius: 12px; border: 2px solid var(--border); background: none; cursor: pointer; font-size: 14px; font-weight: 600; color: var(--muted); transition: all .15s; display: flex; flex-direction: column; align-items: center; gap: 4px; }
+  .kid-toggle .kid-icon { font-size: 24px; }
+  .kid-toggle.sel-dario { border-color: var(--dario); background: var(--dario-soft); color: var(--dario); }
+  .kid-toggle.sel-hugo { border-color: var(--hugo); background: var(--hugo-soft); color: var(--hugo); }
+  .quick-confirm { width: 100%; padding: 14px; border-radius: 12px; border: none; background: var(--ok); color: white; font-size: 16px; font-weight: 700; cursor: pointer; }
+  .quick-confirm:disabled { background: var(--border); color: var(--muted); }
   .add-cat-btn.penalty { color: var(--danger); }
 
   /* ── ASSIGN TAGS ── */
@@ -316,6 +330,24 @@
 </div>
 
 <!-- ════════════════ MODALS ════════════════ -->
+
+<!-- Quick assign from catalog tap -->
+<div class="modal-overlay" id="modal-quick">
+  <div class="quick-sheet">
+    <div class="quick-title" id="quick-title"></div>
+    <div class="quick-sub" id="quick-sub"></div>
+    <div class="quick-kids">
+      <button class="kid-toggle" id="qt-dario" onclick="toggleKidSel('dario')">
+        <span class="kid-icon">🎮</span>Darío
+      </button>
+      <button class="kid-toggle" id="qt-hugo" onclick="toggleKidSel('hugo')">
+        <span class="kid-icon">⭐</span>Hugo
+      </button>
+    </div>
+    <button class="quick-confirm" id="quick-confirm-btn" onclick="confirmQuickAssign()" disabled>Añadir extra hoy</button>
+    <button class="btn btn-cancel" style="width:100%;margin-top:10px;" onclick="closeModal('modal-quick')">Cancelar</button>
+  </div>
+</div>
 
 <!-- Catalog modal (task or penalty) -->
 <div class="modal-overlay" id="modal-cat">
@@ -595,10 +627,11 @@ function renderCatalogPage(){
   const recLabel={daily:'Diario',lv:'Lun–Vie',fds:'Finde'};
 
   document.getElementById('task-cat-list').innerHTML=
-    tasks.map(t=>`<div class="cat-row">
+    tasks.map(t=>`<div class="cat-row" onclick="openQuickAssign('task','${t.id}','${t.label.replace(/'/g,"\\'")}',${t.pts})">
       <span class="cat-label">${t.label}</span>
       <span class="pts-badge positive">+${t.pts}</span>
-      <button class="icon-btn" onclick="deleteCatItem('task','${t.id}')">🗑</button>
+      <span class="tap-hint">▸ asignar</span>
+      <button class="icon-btn" onclick="event.stopPropagation();deleteCatItem('task','${t.id}')">🗑</button>
     </div>`).join('');
 
   const renderAssignList=(assigns,kid)=>assigns.map(a=>`<div class="assign-row">
@@ -621,10 +654,11 @@ function renderCatalogPage(){
 function renderPenaltyPage(){
   const penalties=ls('catalog:penalties')||[];
   document.getElementById('penalty-cat-list').innerHTML=
-    penalties.map(p=>`<div class="cat-row">
+    penalties.map(p=>`<div class="cat-row" onclick="openQuickAssign('penalty','${p.id}','${p.label.replace(/'/g,"\\'")}',${p.pts})">
       <span class="cat-label">${p.label}</span>
       <span class="pts-badge negative">−${p.pts}</span>
-      <button class="icon-btn" onclick="deleteCatItem('penalty','${p.id}')">🗑</button>
+      <span class="tap-hint">▸ aplicar</span>
+      <button class="icon-btn" onclick="event.stopPropagation();deleteCatItem('penalty','${p.id}')">🗑</button>
     </div>`).join('');
 }
 
@@ -740,6 +774,46 @@ function saveExtra(){
   ss(key,extras);
   closeModal('modal-extra');
   renderKid(_extraKid);
+}
+
+// ── QUICK ASSIGN (tap from catalog) ──
+let _qa = { type:'task', id:'', label:'', pts:0, kids:[] };
+function openQuickAssign(type, id, label, pts){
+  _qa = { type, id, label, pts, kids:[] };
+  document.getElementById('quick-title').textContent = label;
+  document.getElementById('quick-sub').textContent =
+    type==='task' ? `+${pts} puntos — ¿a quién se lo añades hoy?` : `-${pts} puntos — ¿a quién se lo aplicas hoy?`;
+  document.getElementById('qt-dario').className='kid-toggle';
+  document.getElementById('qt-hugo').className='kid-toggle';
+  document.getElementById('quick-confirm-btn').disabled=true;
+  openModal('modal-quick');
+}
+function toggleKidSel(kid){
+  const idx=_qa.kids.indexOf(kid);
+  if(idx===-1) _qa.kids.push(kid); else _qa.kids.splice(idx,1);
+  document.getElementById('qt-dario').className='kid-toggle'+(_qa.kids.includes('dario')?' sel-dario':'');
+  document.getElementById('qt-hugo').className='kid-toggle'+(_qa.kids.includes('hugo')?' sel-hugo':'');
+  document.getElementById('quick-confirm-btn').disabled=_qa.kids.length===0;
+}
+function confirmQuickAssign(){
+  const today=new Date();
+  _qa.kids.forEach(kid=>{
+    const dk=dateKey(today);
+    const key='extras:'+kid+':'+dk;
+    const extras=ls(key)||[];
+    extras.push({id:'e'+Date.now()+kid, type:_qa.type==='task'?'task':'penalty', label:_qa.label, pts:_qa.pts});
+    ss(key,extras);
+    // if we're on that kid's page, refresh
+    if(kidDates[kid] && dateKey(kidDates[kid])===dk) renderKid(kid);
+  });
+  closeModal('modal-quick');
+  const names=_qa.kids.map(k=>k==='dario'?'Darío':'Hugo').join(' y ');
+  // small feedback
+  const toast=document.createElement('div');
+  toast.textContent='✓ Añadido a '+names;
+  toast.style.cssText='position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:#1C1C1E;color:white;padding:10px 18px;border-radius:20px;font-size:14px;font-weight:600;z-index:999;opacity:1;transition:opacity .4s';
+  document.body.appendChild(toast);
+  setTimeout(()=>{ toast.style.opacity='0'; setTimeout(()=>toast.remove(),400); },1800);
 }
 
 // ── MODAL UTILS ──
