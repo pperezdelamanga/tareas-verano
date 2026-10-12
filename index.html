@@ -1,570 +1,774 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-<meta name="theme-color" content="#1A3A6B" />
-<meta name="apple-mobile-web-app-capable" content="yes" />
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-<meta name="apple-mobile-web-app-title" content="Verano 🎮" />
-<link rel="manifest" href="manifest.json" />
-<link rel="apple-touch-icon" href="apple-touch-icon.png" />
-<title>Marcador de verano</title>
-
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Tareas">
+<meta name="theme-color" content="#1A3A6B">
+<link rel="manifest" href="/tareas-verano/manifest.json">
+<link rel="apple-touch-icon" href="/tareas-verano/icons/apple-touch-icon.png">
+<title>Tareas y puntos</title>
 <style>
   :root {
-    --cream: #FFF8EF;
-    --ink: #2B2420;
-    --ink-soft: #6B6258;
-    --line: #E7DCC9;
-    --badge-bg: #F1EAD8;
     --dario: #2F6FED;
-    --dario-tint: #DCEAFE;
-    --dario-deep: #163E85;
-    --hugo: #F2762E;
-    --hugo-tint: #FDE6D4;
-    --hugo-deep: #8A3D0F;
-    --good: #3F9142;
-    --good-tint: #E3F2DE;
-    --good-deep: #235425;
-    --radius: 16px;
+    --dario-soft: #EBF1FD;
+    --hugo: #E8670A;
+    --hugo-soft: #FEF0E6;
+    --ok: #2E8B57;
+    --danger: #C0392B;
+    --warn: #E07B00;
+    --bg: #F5F6FA;
+    --card: #FFFFFF;
+    --text: #1C1C1E;
+    --muted: #8E8E93;
+    --border: #E0E0E6;
+    --tab-h: 58px;
+    --radius: 12px;
   }
   * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
-  body {
-    background: var(--cream);
-    color: var(--ink);
-    font-family: -apple-system, 'SF Pro Text', 'Segoe UI', sans-serif;
-    line-height: 1.5;
-    padding: env(safe-area-inset-top, 0) 0 80px;
-    min-height: 100dvh;
-  }
-  h1, h2, h3 { font-family: -apple-system, 'SF Pro Display', 'Segoe UI', sans-serif; font-weight: 700; font-weight: 700; }
+  html, body { height: 100%; overflow: hidden; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); }
 
-  /* ── Top bar ── */
-  .topbar {
-    background: #1A3A6B;
-    color: white;
-    padding: 14px 16px 12px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    position: sticky;
-    top: 0;
-    z-index: 10;
-  }
-  .topbar h1 { font-size: 19px; letter-spacing: -.01em; }
-  .topbar .date { font-size: 12px; opacity: .75; font-family: -apple-system, 'SF Pro Text', 'Segoe UI', sans-serif; font-weight: 400; }
+  /* ── TABS ── */
+  #tabs { position: fixed; bottom: 0; left: 0; right: 0; height: var(--tab-h); background: rgba(255,255,255,.95); backdrop-filter: blur(10px); border-top: 1px solid var(--border); display: flex; z-index: 100; }
+  .tab-btn { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; border: none; background: none; cursor: pointer; padding: 6px 4px; font-size: 10px; color: var(--muted); transition: color .15s; }
+  .tab-btn .icon { font-size: 20px; line-height: 1; }
+  .tab-btn.active { color: var(--dario); }
+  .tab-btn.active.hugo-tab { color: var(--hugo); }
 
-  /* ── Tab bar ── */
-  .tabbar {
-    display: flex;
-    background: white;
-    border-bottom: 1px solid var(--line);
-    position: sticky;
-    top: 54px;
-    z-index: 9;
-  }
-  .tab {
-    flex: 1;
-    padding: 11px 8px;
-    text-align: center;
-    font-size: 13px;
-    font-weight: 600;
-    color: var(--ink-soft);
-    cursor: pointer;
-    border-bottom: 3px solid transparent;
-    transition: color .15s, border-color .15s;
-    user-select: none;
-  }
-  .tab.active-dario  { color: var(--dario);  border-color: var(--dario); }
-  .tab.active-hugo   { color: var(--hugo);   border-color: var(--hugo); }
-  .tab.active-plan   { color: var(--good);   border-color: var(--good); }
+  /* ── PAGES ── */
+  #pages { position: fixed; top: 0; left: 0; right: 0; bottom: var(--tab-h); overflow: hidden; }
+  .page { display: none; height: 100%; overflow-y: auto; -webkit-overflow-scrolling: touch; }
+  .page.active { display: block; }
 
-  /* ── Panels ── */
-  .panel { display: none; padding: 16px 14px; }
-  .panel.active { display: block; }
+  /* ── HEADER ── */
+  .page-header { padding: 16px 16px 12px; background: var(--card); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 10; }
+  .page-header h2 { font-size: 18px; font-weight: 700; }
+  .page-header .sub { font-size: 13px; color: var(--muted); margin-top: 2px; }
 
-  /* ── Score banner ── */
-  .score-banner {
-    border-radius: var(--radius);
-    padding: 14px 16px;
-    margin-bottom: 14px;
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 8px;
-  }
-  .score-cell { text-align: center; }
-  .score-cell .val {
-    font-family: 'SF Mono', 'Courier New', monospace;
-    font-weight: 700;
-    font-size: 32px;
-    line-height: 1;
-    display: block;
-  }
-  .score-cell .lbl { font-size: 11px; opacity: .85; margin-top: 3px; display: block; }
-  .score-divider {
-    width: 1px;
-    background: rgba(255,255,255,.3);
-    align-self: stretch;
-    justify-self: center;
-  }
+  /* ── DATE NAV ── */
+  .date-nav { display: flex; align-items: center; gap: 8px; padding: 10px 16px; background: var(--card); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 10; }
+  .date-nav button { background: none; border: 1.5px solid var(--border); border-radius: 8px; width: 34px; height: 34px; font-size: 16px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+  .date-nav .date-label { flex: 1; text-align: center; font-size: 14px; font-weight: 600; }
+  .date-nav .today-btn { padding: 6px 12px; border-radius: 8px; font-size: 12px; font-weight: 600; cursor: pointer; border: none; background: var(--bg); color: var(--muted); }
 
-  /* ── Section label ── */
-  .section-label {
-    font-size: 11px;
-    font-weight: 600;
-    color: var(--ink-soft);
-    text-transform: uppercase;
-    letter-spacing: .05em;
-    margin: 16px 0 8px;
-    display: flex;
-    align-items: center;
-    gap: 6px;
-  }
-  .section-label .dot {
-    width: 8px; height: 8px; border-radius: 50%;
-    flex-shrink: 0;
-  }
+  /* ── SCORE BANNER ── */
+  .score-banner { margin: 14px 16px 0; border-radius: var(--radius); padding: 14px 16px; display: flex; align-items: center; justify-content: space-between; }
+  .score-banner.dario { background: var(--dario-soft); }
+  .score-banner.hugo { background: var(--hugo-soft); }
+  .score-banner .pts { font-size: 28px; font-weight: 800; }
+  .score-banner.dario .pts { color: var(--dario); }
+  .score-banner.hugo .pts { color: var(--hugo); }
+  .score-banner .pts-label { font-size: 12px; color: var(--muted); margin-top: 2px; }
+  .score-banner .pts-side { text-align: right; }
+  .score-banner .sub-pts { font-size: 13px; font-weight: 600; color: var(--muted); }
 
-  /* ── Task rows ── */
-  .task-list { background: white; border-radius: var(--radius); overflow: hidden; border: 1px solid var(--line); }
-  .task-row {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 11px 14px;
-    border-bottom: 1px solid var(--line);
-    cursor: pointer;
-    transition: background .1s;
-    -webkit-user-select: none;
-    user-select: none;
-  }
-  .task-row:last-child { border-bottom: none; }
-  .task-row:active { background: var(--cream); }
-  .task-row input[type=checkbox] { width: 20px; height: 20px; flex-shrink: 0; cursor: pointer; }
-  .task-row .task-text { flex: 1; font-size: 14px; line-height: 1.4; }
-  .task-row.checked .task-text { text-decoration: line-through; color: var(--ink-soft); }
-  .badge {
-    font-family: 'SF Mono', 'Courier New', monospace;
-    font-size: 11px;
-    font-weight: 600;
-    padding: 3px 8px;
-    border-radius: 8px;
-    white-space: nowrap;
-    flex-shrink: 0;
-  }
+  /* ── SECTION ── */
+  .section { margin: 14px 16px 0; }
+  .section-title { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .6px; color: var(--muted); margin-bottom: 8px; }
 
-  /* ── Streak ── */
-  .streak-row { display: flex; gap: 5px; align-items: center; flex-wrap: wrap; margin-top: 4px; }
-  .day-dot { width: 14px; height: 14px; border-radius: 50%; background: var(--line); }
-  .day-dot.good { background: var(--good); }
-  .streak-label { font-size: 12px; color: var(--ink-soft); margin-left: 4px; }
+  /* ── CARD LIST ── */
+  .card-list { background: var(--card); border-radius: var(--radius); overflow: hidden; border: 1px solid var(--border); }
+  .card-row { display: flex; align-items: center; gap: 10px; padding: 12px 14px; border-bottom: 1px solid var(--border); }
+  .card-row:last-child { border-bottom: none; }
+  .card-row .label { flex: 1; font-size: 14px; line-height: 1.3; }
+  .card-row .label.done-label { text-decoration: line-through; color: var(--muted); }
+  .card-row .pts-badge { font-size: 12px; font-weight: 700; padding: 3px 8px; border-radius: 20px; white-space: nowrap; }
+  .pts-badge.positive { background: #E8F5E9; color: var(--ok); }
+  .pts-badge.negative { background: #FDECEA; color: var(--danger); }
+  .pts-badge.neutral { background: var(--bg); color: var(--muted); }
 
-  /* ── Plan cards ── */
-  .plan-grid { display: grid; gap: 10px; margin-bottom: 14px; }
-  .plan-card {
-    background: white;
-    border: 1.5px solid var(--line);
-    border-radius: 12px;
-    padding: 13px 15px;
-    font-size: 14px;
-    cursor: pointer;
-    transition: border-color .15s, background .15s;
-    -webkit-user-select: none;
-    user-select: none;
-  }
-  .plan-card:active { background: var(--cream); }
-  .plan-card.locked { opacity: .45; cursor: not-allowed; }
-  .plan-card.chosen {
-    border-color: var(--good);
-    background: var(--good-tint);
-    color: var(--good-deep);
-    font-weight: 600;
-  }
-  .current-plan-box {
-    background: var(--good-tint);
-    color: var(--good-deep);
-    border-radius: 12px;
-    padding: 13px 15px;
-    font-size: 14px;
-    margin-bottom: 12px;
-    line-height: 1.5;
-  }
-  .add-row { display: flex; gap: 8px; margin-top: 6px; }
-  .add-row input {
-    flex: 1;
-    padding: 10px 12px;
-    border: 1.5px solid var(--line);
-    border-radius: 10px;
-    font-size: 14px;
-    font-family: -apple-system, 'SF Pro Text', 'Segoe UI', sans-serif;
-    background: white;
-    color: var(--ink);
-  }
-  .add-row input:focus { outline: none; border-color: var(--good); }
-  .add-row button {
-    padding: 10px 16px;
-    border: 1.5px solid var(--line);
-    border-radius: 10px;
-    background: white;
-    font-size: 14px;
-    font-weight: 600;
-    font-family: -apple-system, 'SF Pro Text', 'Segoe UI', sans-serif;
-    cursor: pointer;
-    color: var(--ink);
-  }
-  .plan-status {
-    font-size: 13px;
-    color: var(--ink-soft);
-    margin-bottom: 14px;
-    line-height: 1.5;
-  }
-  .unlock-banner {
-    background: var(--good-tint);
-    color: var(--good-deep);
-    border-radius: 10px;
-    padding: 10px 14px;
-    font-size: 13px;
-    font-weight: 600;
-    margin-bottom: 14px;
-  }
+  /* ── CHECKBOX ── */
+  .check-wrap { width: 26px; height: 26px; flex-shrink: 0; }
+  .check-wrap input[type=checkbox] { display: none; }
+  .check-wrap label { display: block; width: 26px; height: 26px; border-radius: 7px; border: 2px solid var(--border); cursor: pointer; transition: all .15s; position: relative; }
+  .check-wrap input:checked + label { border-color: var(--ok); background: var(--ok); }
+  .check-wrap input:checked + label::after { content: '✓'; position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; color: white; font-size: 14px; font-weight: 700; }
 
-  /* ── Install hint ── */
-  .install-hint {
-    background: #EFF6FF;
-    border: 1px solid #BFDBFE;
-    border-radius: 12px;
-    padding: 12px 14px;
-    font-size: 13px;
-    color: #1E40AF;
-    margin-bottom: 16px;
-    display: none;
-    line-height: 1.5;
-  }
-  .install-hint.show { display: block; }
+  /* ── ACTIONS ── */
+  .actions-row { display: flex; gap: 8px; margin: 10px 16px 0; }
+  .action-btn { flex: 1; padding: 10px 8px; border-radius: 10px; border: 1.5px dashed var(--border); background: none; cursor: pointer; font-size: 13px; font-weight: 600; color: var(--muted); display: flex; align-items: center; justify-content: center; gap: 6px; }
+  .action-btn:active { background: var(--bg); }
+
+  /* ── EMPTY STATE ── */
+  .empty { padding: 28px 16px; text-align: center; color: var(--muted); font-size: 13px; }
+  .empty .emoji { font-size: 32px; display: block; margin-bottom: 8px; }
+
+  /* ── CATALOG ITEMS (tareas / penaliz) ── */
+  .cat-row { display: flex; align-items: center; gap: 10px; padding: 12px 14px; border-bottom: 1px solid var(--border); }
+  .cat-row:last-child { border-bottom: none; }
+  .cat-row .cat-label { flex: 1; font-size: 14px; }
+  .cat-row .icon-btn { background: none; border: none; font-size: 16px; cursor: pointer; padding: 4px; color: var(--muted); }
+  .add-cat-btn { display: flex; align-items: center; justify-content: center; gap: 6px; padding: 12px; background: none; border: none; border-top: 1px solid var(--border); width: 100%; cursor: pointer; font-size: 14px; color: var(--dario); font-weight: 600; }
+  .add-cat-btn.penalty { color: var(--danger); }
+
+  /* ── ASSIGN TAGS ── */
+  .rec-tag { font-size: 10px; font-weight: 600; padding: 2px 6px; border-radius: 10px; background: var(--bg); color: var(--muted); white-space: nowrap; }
+  .assign-row { display: flex; align-items: center; gap: 8px; padding: 10px 14px; border-bottom: 1px solid var(--border); }
+  .assign-row:last-child { border-bottom: none; }
+  .assign-row .assign-label { flex: 1; font-size: 13px; }
+  .add-assign-btn { display: flex; align-items: center; justify-content: center; gap: 6px; padding: 10px; background: none; border: none; border-top: 1px solid var(--border); width: 100%; cursor: pointer; font-size: 13px; font-weight: 600; }
+  .add-assign-btn.dario-color { color: var(--dario); }
+  .add-assign-btn.hugo-color { color: var(--hugo); }
+
+  /* ── COLLAPSIBLE ── */
+  .collapsible-header { display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; cursor: pointer; font-size: 13px; font-weight: 600; color: var(--muted); border-bottom: 1px solid var(--border); user-select: none; }
+  .collapsible-header .arrow { transition: transform .2s; }
+  .collapsible-header.open .arrow { transform: rotate(180deg); }
+  .collapsible-body { display: none; }
+  .collapsible-body.open { display: block; }
+
+  /* ── MODAL ── */
+  .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.5); z-index: 200; align-items: flex-end; }
+  .modal-overlay.open { display: flex; }
+  .modal-sheet { background: var(--card); border-radius: 20px 20px 0 0; padding: 20px 20px 36px; width: 100%; max-height: 85vh; overflow-y: auto; }
+  .modal-title { font-size: 17px; font-weight: 700; margin-bottom: 16px; }
+  .modal-field { margin-bottom: 14px; }
+  .modal-field label { display: block; font-size: 12px; font-weight: 600; color: var(--muted); margin-bottom: 6px; text-transform: uppercase; letter-spacing: .4px; }
+  .modal-field input, .modal-field select, .modal-field textarea { width: 100%; padding: 10px 12px; border: 1.5px solid var(--border); border-radius: 10px; font-size: 15px; font-family: inherit; background: var(--bg); color: var(--text); }
+  .modal-field input:focus, .modal-field select:focus { outline: none; border-color: var(--dario); }
+  .modal-actions { display: flex; gap: 10px; margin-top: 18px; }
+  .btn { flex: 1; padding: 13px; border-radius: 12px; border: none; font-size: 15px; font-weight: 700; cursor: pointer; }
+  .btn-cancel { background: var(--bg); color: var(--muted); }
+  .btn-save { background: var(--dario); color: white; }
+  .btn-save.danger { background: var(--danger); }
+  .btn-save.hugo-save { background: var(--hugo); }
+
+  /* ── SEGMENTED ── */
+  .seg-ctrl { display: flex; background: var(--bg); border-radius: 10px; padding: 3px; margin-bottom: 14px; }
+  .seg-btn { flex: 1; padding: 8px; border: none; background: none; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; color: var(--muted); transition: all .15s; }
+  .seg-btn.active { background: white; color: var(--text); box-shadow: 0 1px 4px rgba(0,0,0,.12); }
+
+  /* ── SPACER ── */
+  .pb { height: 20px; }
+  .pt { padding-top: 12px; }
 </style>
 </head>
 <body>
 
-<div class="topbar">
-  <div>
-    <h1>Marcador de verano 🎮</h1>
-    <span class="date" id="today-label"></span>
+<!-- ════════════════ PAGES ════════════════ -->
+<div id="pages">
+
+  <!-- TAB: TAREAS (catálogo) -->
+  <div class="page active" id="page-tareas">
+    <div class="page-header">
+      <h2>📋 Catálogo de tareas</h2>
+      <div class="sub">Tareas disponibles y sus puntos</div>
+    </div>
+    <div class="section pt">
+      <div class="section-title">Tareas</div>
+      <div class="card-list">
+        <div id="task-cat-list"></div>
+        <button class="add-cat-btn" onclick="openCatModal('task')">＋ Nueva tarea</button>
+      </div>
+    </div>
+    <div class="section" style="margin-top:20px;">
+      <div class="section-title">Asignaciones de Darío</div>
+      <div class="card-list" id="assign-list-dario"></div>
+    </div>
+    <div class="section" style="margin-top:20px;">
+      <div class="section-title">Asignaciones de Hugo</div>
+      <div class="card-list" id="assign-list-hugo"></div>
+    </div>
+    <div class="pb"></div>
+  </div>
+
+  <!-- TAB: PENALIZACIONES (catálogo) -->
+  <div class="page" id="page-penaliz">
+    <div class="page-header">
+      <h2>⚠️ Penalizaciones</h2>
+      <div class="sub">Comportamientos que restan puntos</div>
+    </div>
+    <div class="section pt">
+      <div class="section-title">Penalizaciones</div>
+      <div class="card-list">
+        <div id="penalty-cat-list"></div>
+        <button class="add-cat-btn penalty" onclick="openCatModal('penalty')">＋ Nueva penalización</button>
+      </div>
+    </div>
+    <div class="pb"></div>
+  </div>
+
+  <!-- TAB: DARÍO -->
+  <div class="page" id="page-dario">
+    <div class="date-nav" id="date-nav-dario">
+      <button onclick="changeDay('dario',-1)">‹</button>
+      <span class="date-label" id="date-label-dario"></span>
+      <button class="today-btn" onclick="goToday('dario')">Hoy</button>
+      <button onclick="changeDay('dario',1)">›</button>
+    </div>
+    <div id="score-dario" class="score-banner dario">
+      <div>
+        <div class="pts" id="pts-dario">0</div>
+        <div class="pts-label">puntos hoy</div>
+      </div>
+      <div class="pts-side">
+        <div class="sub-pts" id="pts-dario-rec">Recurrentes: 0</div>
+        <div class="sub-pts" id="pts-dario-extra">Extras: 0</div>
+      </div>
+    </div>
+
+    <!-- Recurring tasks -->
+    <div class="section" style="margin-top:14px;">
+      <div class="section-title">Tareas de hoy</div>
+      <div class="card-list" id="today-list-dario"></div>
+    </div>
+
+    <!-- Extra tasks & penalties -->
+    <div class="section">
+      <div class="section-title">Extras de hoy</div>
+      <div class="card-list" id="extras-list-dario">
+        <div class="empty"><span class="emoji">✨</span>Sin extras</div>
+      </div>
+    </div>
+    <div class="actions-row">
+      <button class="action-btn" onclick="openExtraModal('dario','task')">＋ Tarea puntual</button>
+      <button class="action-btn" onclick="openExtraModal('dario','penalty')">− Penalización</button>
+    </div>
+
+    <!-- Assignments manager (collapsible) -->
+    <div class="section" style="margin-top:20px;">
+      <div class="card-list">
+        <div class="collapsible-header" onclick="toggleCollapse('collapse-dario')">
+          <span>Gestionar asignaciones recurrentes</span>
+          <span class="arrow">▾</span>
+        </div>
+        <div class="collapsible-body" id="collapse-dario">
+          <div id="assign-mgr-dario"></div>
+          <button class="add-assign-btn dario-color" onclick="openAssignModal('dario')">＋ Asignar tarea recurrente</button>
+        </div>
+      </div>
+    </div>
+    <div class="pb"></div>
+  </div>
+
+  <!-- TAB: HUGO -->
+  <div class="page" id="page-hugo">
+    <div class="date-nav" id="date-nav-hugo">
+      <button onclick="changeDay('hugo',-1)">‹</button>
+      <span class="date-label" id="date-label-hugo"></span>
+      <button class="today-btn" onclick="goToday('hugo')">Hoy</button>
+      <button onclick="changeDay('hugo',1)">›</button>
+    </div>
+    <div id="score-hugo" class="score-banner hugo">
+      <div>
+        <div class="pts" id="pts-hugo">0</div>
+        <div class="pts-label">puntos hoy</div>
+      </div>
+      <div class="pts-side">
+        <div class="sub-pts" id="pts-hugo-rec">Recurrentes: 0</div>
+        <div class="sub-pts" id="pts-hugo-extra">Extras: 0</div>
+      </div>
+    </div>
+
+    <div class="section" style="margin-top:14px;">
+      <div class="section-title">Tareas de hoy</div>
+      <div class="card-list" id="today-list-hugo"></div>
+    </div>
+
+    <div class="section">
+      <div class="section-title">Extras de hoy</div>
+      <div class="card-list" id="extras-list-hugo">
+        <div class="empty"><span class="emoji">✨</span>Sin extras</div>
+      </div>
+    </div>
+    <div class="actions-row">
+      <button class="action-btn" onclick="openExtraModal('hugo','task')">＋ Tarea puntual</button>
+      <button class="action-btn" onclick="openExtraModal('hugo','penalty')">− Penalización</button>
+    </div>
+
+    <div class="section" style="margin-top:20px;">
+      <div class="card-list">
+        <div class="collapsible-header" onclick="toggleCollapse('collapse-hugo')">
+          <span>Gestionar asignaciones recurrentes</span>
+          <span class="arrow">▾</span>
+        </div>
+        <div class="collapsible-body" id="collapse-hugo">
+          <div id="assign-mgr-hugo"></div>
+          <button class="add-assign-btn hugo-color" onclick="openAssignModal('hugo')">＋ Asignar tarea recurrente</button>
+        </div>
+      </div>
+    </div>
+    <div class="pb"></div>
+  </div>
+
+</div><!-- /pages -->
+
+<!-- ════════════════ TABS BAR ════════════════ -->
+<div id="tabs">
+  <button class="tab-btn active" onclick="switchTab('tareas')" id="tab-tareas">
+    <span class="icon">📋</span>
+    <span>Tareas</span>
+  </button>
+  <button class="tab-btn" onclick="switchTab('penaliz')" id="tab-penaliz">
+    <span class="icon">⚠️</span>
+    <span>Penaliz.</span>
+  </button>
+  <button class="tab-btn" onclick="switchTab('dario')" id="tab-dario">
+    <span class="icon">🎮</span>
+    <span>Darío</span>
+  </button>
+  <button class="tab-btn hugo-tab" onclick="switchTab('hugo')" id="tab-hugo">
+    <span class="icon">⭐</span>
+    <span>Hugo</span>
+  </button>
+</div>
+
+<!-- ════════════════ MODALS ════════════════ -->
+
+<!-- Catalog modal (task or penalty) -->
+<div class="modal-overlay" id="modal-cat">
+  <div class="modal-sheet">
+    <div class="modal-title" id="modal-cat-title">Nueva tarea</div>
+    <div class="modal-field">
+      <label>Descripción</label>
+      <input type="text" id="cat-label-input" placeholder="Ej: Hacer la cama">
+    </div>
+    <div class="modal-field">
+      <label>Puntos</label>
+      <input type="number" id="cat-pts-input" min="1" max="200" value="10">
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-cancel" onclick="closeModal('modal-cat')">Cancelar</button>
+      <button class="btn btn-save" id="modal-cat-save-btn" onclick="saveCatItem()">Guardar</button>
+    </div>
   </div>
 </div>
 
-<div class="tabbar">
-  <div class="tab active-dario" data-tab="dario" onclick="switchTab('dario')">Darío</div>
-  <div class="tab" data-tab="hugo" onclick="switchTab('hugo')">Hugo</div>
-  <div class="tab" data-tab="plan" onclick="switchTab('plan')">Plan finde 🌟</div>
+<!-- Assign modal -->
+<div class="modal-overlay" id="modal-assign">
+  <div class="modal-sheet">
+    <div class="modal-title" id="modal-assign-title">Asignar tarea</div>
+    <div class="modal-field">
+      <label>Tarea</label>
+      <select id="assign-task-select"></select>
+    </div>
+    <div class="modal-field">
+      <label>Recurrencia</label>
+      <div class="seg-ctrl">
+        <button class="seg-btn active" data-rec="daily" onclick="setRec('daily',this)">Todos los días</button>
+        <button class="seg-btn" data-rec="lv" onclick="setRec('lv',this)">Lun–Vie</button>
+        <button class="seg-btn" data-rec="fds" onclick="setRec('fds',this)">Finde</button>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-cancel" onclick="closeModal('modal-assign')">Cancelar</button>
+      <button class="btn btn-save" id="modal-assign-save-btn" onclick="saveAssign()">Asignar</button>
+    </div>
+  </div>
 </div>
 
-<div id="panel-dario" class="panel active"></div>
-<div id="panel-hugo" class="panel"></div>
-<div id="panel-plan" class="panel"></div>
+<!-- Extra modal -->
+<div class="modal-overlay" id="modal-extra">
+  <div class="modal-sheet">
+    <div class="modal-title" id="modal-extra-title">Añadir extra</div>
+    <div class="modal-field">
+      <label id="extra-source-label">Elegir de catálogo o libre</label>
+      <div class="seg-ctrl" id="extra-source-seg">
+        <button class="seg-btn active" data-src="catalog" onclick="setExtraSrc('catalog',this)">Del catálogo</button>
+        <button class="seg-btn" data-src="free" onclick="setExtraSrc('free',this)">Libre</button>
+      </div>
+    </div>
+    <div id="extra-catalog-field" class="modal-field">
+      <label>Seleccionar</label>
+      <select id="extra-cat-select"></select>
+    </div>
+    <div id="extra-free-field" style="display:none;">
+      <div class="modal-field">
+        <label>Descripción</label>
+        <input type="text" id="extra-label-input" placeholder="">
+      </div>
+      <div class="modal-field">
+        <label>Puntos</label>
+        <input type="number" id="extra-pts-input" min="1" max="200" value="10">
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-cancel" onclick="closeModal('modal-extra')">Cancelar</button>
+      <button class="btn btn-save" id="modal-extra-save-btn" onclick="saveExtra()">Añadir</button>
+    </div>
+  </div>
+</div>
 
+<!-- ════════════════ SCRIPT ════════════════ -->
 <script>
-// ── Config ────────────────────────────────────────────────────────────────────
-var WEEK_GOAL = 5;
-var WELCOME_MIN = 20;
+// ── STORAGE HELPERS ──
+function ls(key){ try{ return JSON.parse(localStorage.getItem(key)); } catch(e){ return null; } }
+function ss(key,val){ try{ localStorage.setItem(key,JSON.stringify(val)); } catch(e){} }
 
-var TASKS = {
-  dario: [
-    {id:'d1', label:'Hacer la cama y ordenar la habitación', min:5},
-    {id:'d2', label:'Ducha y rutina de higiene', min:5},
-    {id:'d3', label:'Tarea doméstica (lavavajillas, tender la ropa...)', min:5},
-    {id:'d4', label:'Lectura libre, 20-30 min', min:10},
-    {id:'d5', label:'Reto cognitivo: ajedrez, lógica, escritura o proyecto propio', min:10},
-    {id:'d6', label:'Actividad física o al aire libre, 20-30 min', min:5},
-  ],
-  hugo: [
-    {id:'h1', label:'Hacer la cama', min:5},
-    {id:'h2', label:'Recoger los juguetes y su cuarto', min:5},
-    {id:'h3', label:'Vestirse solo y aseo (dientes y cara)', min:5},
-    {id:'h4', label:'Ayudar a poner o recoger la mesa', min:5},
-    {id:'h5', label:'Leer o escuchar un cuento, 15 min', min:10},
-    {id:'h6', label:'Reto de lógica, puzzle o dibujo dirigido', min:10},
-  ]
-};
-
-var BONUS = {
-  dario: [
-    {id:'db1', label:'Ayudar a Hugo sin que se lo pidan', min:5},
-    {id:'db2', label:'Resolver un conflicto hablando en vez de gritar', min:5},
-    {id:'db3', label:'Mostrar paciencia en un momento difícil', min:5},
-    {id:'db4', label:'Tener un gesto bonito por iniciativa propia', min:5},
-  ],
-  hugo: [
-    {id:'hb1', label:'Jugar solo un rato mientras Darío tiene su momento de tranquilidad', min:5},
-    {id:'hb2', label:'Decir "por favor" y "gracias" sin que se lo recuerden', min:5},
-    {id:'hb3', label:'Mantener la calma en una rabieta o frustración', min:5},
-    {id:'hb4', label:'Hacer algo bueno por su cuenta, sin que se lo pidan', min:5},
-  ]
-};
-
-var PLAN_DEFAULTS = [
-  'Tarde de cine en casa con palomitas',
-  'Noche de juegos de mesa con chuches',
-  'Helado especial por la tarde',
-  'Cocinar juntos algo especial (tortitas, pizza casera)',
-  'Excursión corta a un parque o zona natural cercana',
-  'Invitar a un amigo a merendar y a la piscina',
-  'Comida o cena en vuestro restaurante favorito'
+// ── DEFAULTS ──
+const DEFAULT_TASKS = [
+  {id:'ct1', label:'Hacer la cama', pts:10},
+  {id:'ct2', label:'Recoger la habitación', pts:15},
+  {id:'ct3', label:'Ducharse sin que te lo recuerden', pts:10},
+  {id:'ct4', label:'Poner/quitar la mesa', pts:10},
+  {id:'ct5', label:'Leer 20 minutos', pts:20},
+  {id:'ct6', label:'Hacer los deberes o repasar', pts:25},
+  {id:'ct7', label:'Ayudar a preparar la comida o cena', pts:15},
+  {id:'ct8', label:'Sacar al perro o ayudar con mascotas', pts:10},
+  {id:'ct9', label:'Jugar solo tranquilamente (Hugo)', pts:20},
+  {id:'ct10', label:'Recoger los juguetes o ropa', pts:10},
+];
+const DEFAULT_PENALTIES = [
+  {id:'cp1', label:'Discutir con el hermano', pts:15},
+  {id:'cp2', label:'Molestar cuando te piden espacio', pts:20},
+  {id:'cp3', label:'Desobedecer a la primera', pts:10},
+  {id:'cp4', label:'Mentir', pts:25},
+];
+const DEFAULT_ASSIGN_DARIO = [
+  {id:'ad1', taskId:'ct1', label:'Hacer la cama', pts:10, rec:'daily'},
+  {id:'ad2', taskId:'ct2', label:'Recoger la habitación', pts:15, rec:'daily'},
+  {id:'ad3', taskId:'ct3', label:'Ducharse sin que te lo recuerden', pts:10, rec:'daily'},
+  {id:'ad4', taskId:'ct5', label:'Leer 20 minutos', pts:20, rec:'lv'},
+  {id:'ad5', taskId:'ct6', label:'Hacer los deberes o repasar', pts:25, rec:'lv'},
+];
+const DEFAULT_ASSIGN_HUGO = [
+  {id:'ah1', taskId:'ct1', label:'Hacer la cama', pts:10, rec:'daily'},
+  {id:'ah2', taskId:'ct2', label:'Recoger la habitación', pts:15, rec:'daily'},
+  {id:'ah3', taskId:'ct3', label:'Ducharse sin que te lo recuerden', pts:10, rec:'daily'},
+  {id:'ah4', taskId:'ct9', label:'Jugar solo tranquilamente', pts:20, rec:'daily'},
+  {id:'ah5', taskId:'ct10', label:'Recoger los juguetes o ropa', pts:10, rec:'daily'},
 ];
 
-var KIDS = [
-  {id:'dario', name:'Darío', age:10, color:'--dario', tint:'--dario-tint', deep:'--dario-deep'},
-  {id:'hugo',  name:'Hugo',  age:6,  color:'--hugo',  tint:'--hugo-tint',  deep:'--hugo-deep'}
-];
-
-// ── Date helpers ──────────────────────────────────────────────────────────────
-function pad(n){ return n<10?'0'+n:''+n; }
-function dateKey(d){ return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate()); }
-function addDays(d,n){ var r=new Date(d); r.setDate(r.getDate()+n); return r; }
-
-var today = new Date();
-var todayKey = dateKey(today);
-
-// ── localStorage helpers ──────────────────────────────────────────────────────
-function lsGet(key){ try{ return localStorage.getItem(key); }catch(e){ return null; } }
-function lsSet(key,val){ try{ localStorage.setItem(key,val); }catch(e){} }
-
-function loadDay(kidId, key){
-  var raw = lsGet('progress:'+kidId+':'+key);
-  if(!raw) return {tasks:[], bonus:[]};
-  try{ var p=JSON.parse(raw); return {tasks:p.tasks||[], bonus:p.bonus||[]}; }
-  catch(e){ return {tasks:[], bonus:[]}; }
-}
-function saveDay(kidId, key, data){
-  lsSet('progress:'+kidId+':'+key, JSON.stringify(data));
-}
-function sumMin(list, ids){
-  return list.filter(function(t){ return ids.indexOf(t.id)!==-1; })
-             .reduce(function(s,t){ return s+t.min; }, 0);
+// ── INIT STORAGE ──
+function initStorage(){
+  if(!ls('catalog:tasks')) ss('catalog:tasks', DEFAULT_TASKS);
+  if(!ls('catalog:penalties')) ss('catalog:penalties', DEFAULT_PENALTIES);
+  if(!ls('assignments:dario')) ss('assignments:dario', DEFAULT_ASSIGN_DARIO);
+  if(!ls('assignments:hugo')) ss('assignments:hugo', DEFAULT_ASSIGN_HUGO);
 }
 
-// ── State ─────────────────────────────────────────────────────────────────────
-var state = { dario:{today:{tasks:[],bonus:[]}, week:[]}, hugo:{today:{tasks:[],bonus:[]}, week:[]} };
-
-// ── Tab switching ──────────────────────────────────────────────────────────────
-var currentTab = 'dario';
-function switchTab(id){
-  currentTab = id;
-  document.querySelectorAll('.tab').forEach(function(t){
-    t.className = 'tab' + (t.dataset.tab===id ? ' active-'+id : '');
-  });
-  document.querySelectorAll('.panel').forEach(function(p){
-    p.classList.toggle('active', p.id==='panel-'+id);
-  });
+// ── DATE UTILITIES ──
+const kidDates = { dario: new Date(), hugo: new Date() };
+function dateKey(d){ return d.toISOString().slice(0,10); }
+function dayOfWeek(d){ return d.getDay(); } // 0=sun,1=mon...6=sat
+function matchesRec(rec, d){
+  const dow = dayOfWeek(d);
+  if(rec==='daily') return true;
+  if(rec==='lv') return dow>=1 && dow<=5;
+  if(rec==='fds') return dow===0 || dow===6;
+  return false;
 }
-
-// ── Render a kid panel ────────────────────────────────────────────────────────
-function renderKid(kid){
-  var d = state[kid.id];
-  var color = 'var('+kid.color+')';
-  var tint  = 'var('+kid.tint+')';
-  var deep  = 'var('+kid.deep+')';
-
-  // Available today (earned yesterday)
-  var yKey = dateKey(addDays(today,-1));
-  var yData = loadDay(kid.id, yKey);
-  var firstEver = !lsGet('app:started');
-  var avail = sumMin(TASKS[kid.id], yData.tasks) + sumMin(BONUS[kid.id], yData.bonus);
-  if(firstEver && yData.tasks.length===0) avail = WELCOME_MIN;
-
-  // Earned today so far
-  var earning = sumMin(TASKS[kid.id], d.today.tasks) + sumMin(BONUS[kid.id], d.today.bonus);
-
-  // Streak
-  var week = computeWeek(kid.id);
-  var goodCount = week.filter(Boolean).length;
-
-  var html = '';
-
-  // Score banner
-  html += '<div class="score-banner" style="background:'+deep+';color:white;">';
-  html += '<div class="score-cell">';
-  html += '<span class="val">'+avail+'</span>';
-  html += '<span class="lbl">⏱ min consola HOY</span>';
-  html += '</div>';
-  html += '<div style="width:1px;background:rgba(255,255,255,.3);align-self:stretch;"></div>';
-  html += '<div class="score-cell">';
-  html += '<span class="val">'+earning+'</span>';
-  html += '<span class="lbl">🎯 ganando para MAÑANA</span>';
-  html += '</div>';
-  html += '</div>';
-
-  // Tasks
-  html += '<div class="section-label"><span class="dot" style="background:'+color+'"></span>Tareas de hoy</div>';
-  html += '<div class="task-list" id="tasks-'+kid.id+'">';
-  TASKS[kid.id].forEach(function(t){
-    var checked = d.today.tasks.indexOf(t.id)!==-1;
-    html += taskRowHTML(kid, t, checked, false);
-  });
-  html += '</div>';
-
-  // Bonus
-  html += '<div class="section-label"><span class="dot" style="background:var(--good)"></span>Bonus por buen comportamiento</div>';
-  html += '<div class="task-list" id="bonus-'+kid.id+'">';
-  BONUS[kid.id].forEach(function(t){
-    var checked = d.today.bonus.indexOf(t.id)!==-1;
-    html += taskRowHTML(kid, t, checked, true);
-  });
-  html += '</div>';
-
-  // Streak
-  html += '<div class="section-label"><span class="dot" style="background:var(--good)"></span>Constancia esta semana</div>';
-  html += '<div class="streak-row">';
-  week.forEach(function(g){ html += '<div class="day-dot'+(g?' good':'')+'"></div>'; });
-  html += '<span class="streak-label">'+goodCount+'/7 días completos (meta: '+WEEK_GOAL+')</span>';
-  html += '</div>';
-
-  document.getElementById('panel-'+kid.id).innerHTML = html;
-
-  // Bind checkboxes
-  document.querySelectorAll('#panel-'+kid.id+' input[type=checkbox]').forEach(function(cb){
-    cb.addEventListener('change', function(e){
-      e.stopPropagation();
-      handleCheck(cb, kid);
-    });
-  });
-  document.querySelectorAll('#panel-'+kid.id+' .task-row').forEach(function(row){
-    row.addEventListener('click', function(e){
-      if(e.target.tagName==='INPUT') return;
-      var cb = row.querySelector('input[type=checkbox]');
-      cb.checked = !cb.checked;
-      handleCheck(cb, kid);
-    });
-  });
+function fmtDate(d){
+  const days=['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
+  const months=['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+  const today=new Date(); const yesterday=new Date(today); yesterday.setDate(today.getDate()-1);
+  const tomorrow=new Date(today); tomorrow.setDate(today.getDate()+1);
+  const dk=dateKey(d);
+  let prefix='';
+  if(dk===dateKey(today)) prefix='Hoy · ';
+  else if(dk===dateKey(yesterday)) prefix='Ayer · ';
+  else if(dk===dateKey(tomorrow)) prefix='Mañana · ';
+  return prefix+days[d.getDay()]+' '+d.getDate()+' '+months[d.getMonth()];
 }
-
-function taskRowHTML(kid, item, checked, isBonus){
-  var color = isBonus ? 'var(--good)' : 'var('+kid.color+')';
-  var bg    = isBonus ? 'var(--good-tint)' : 'var(--badge-bg)';
-  var fc    = isBonus ? 'var(--good-deep)' : 'var(--ink-soft)';
-  return '<div class="task-row'+(checked?' checked':'')+'" data-id="'+item.id+'" data-type="'+(isBonus?'bonus':'task')+'">'
-    +'<input type="checkbox" style="accent-color:'+color+';" '+(checked?'checked':'')+'>'
-    +'<span class="task-text">'+escHtml(item.label)+'</span>'
-    +'<span class="badge" style="background:'+bg+';color:'+fc+';">+'+item.min+' min</span>'
-    +'</div>';
-}
-
-function handleCheck(cb, kid){
-  var row = cb.closest('.task-row');
-  var id = row.dataset.id;
-  var type = row.dataset.type;
-  var arr = type==='bonus' ? state[kid.id].today.bonus : state[kid.id].today.tasks;
-  var idx = arr.indexOf(id);
-  if(cb.checked){ if(idx===-1) arr.push(id); }
-  else { if(idx!==-1) arr.splice(idx,1); }
-  saveDay(kid.id, todayKey, state[kid.id].today);
-  if(!lsGet('app:started')) lsSet('app:started','yes');
+function changeDay(kid,delta){
+  const d=new Date(kidDates[kid]); d.setDate(d.getDate()+delta); kidDates[kid]=d;
   renderKid(kid);
-  renderPlan();
+}
+function goToday(kid){ kidDates[kid]=new Date(); renderKid(kid); }
+
+// ── TAB SWITCHING ──
+function switchTab(name){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('page-'+name).classList.add('active');
+  document.getElementById('tab-'+name).classList.add('active');
+  if(name==='tareas') renderCatalogPage();
+  else if(name==='penaliz') renderPenaltyPage();
+  else if(name==='dario'||name==='hugo') renderKid(name);
 }
 
-function computeWeek(kidId){
-  var arr = [];
-  for(var i=6; i>=0; i--){
-    var dk = dateKey(addDays(today,-i));
-    var dd = (dk===todayKey) ? state[kidId].today : loadDay(kidId,dk);
-    var tm = sumMin(TASKS[kidId], dd.tasks);
-    var bm = sumMin(BONUS[kidId], dd.bonus);
-    arr.push(tm>=40 && bm>=5);
-  }
-  return arr;
+// ── SCORE CALCULATION ──
+function dayScore(kid, d){
+  const dk=dateKey(d);
+  const assigns=ls('assignments:'+kid)||[];
+  const done=ls('done:'+kid+':'+dk)||[];
+  const extras=ls('extras:'+kid+':'+dk)||[];
+  let rec=0;
+  assigns.filter(a=>matchesRec(a.rec,d)).forEach(a=>{
+    if(done.includes(a.id)) rec+=a.pts;
+  });
+  let ext=0;
+  extras.forEach(e=>{ ext += e.type==='task' ? e.pts : -e.pts; });
+  return {rec, ext, total:rec+ext};
 }
 
-// ── Plan panel ────────────────────────────────────────────────────────────────
-function renderPlan(){
-  var dWeek = computeWeek('dario').filter(Boolean).length;
-  var hWeek = computeWeek('hugo').filter(Boolean).length;
-  var unlocked = dWeek>=WEEK_GOAL && hWeek>=WEEK_GOAL;
+// ── RENDER KID PAGE ──
+function renderKid(kid){
+  const d=kidDates[kid];
+  const dk=dateKey(d);
+  const assigns=ls('assignments:'+kid)||[];
+  const done=ls('done:'+kid+':'+dk)||[];
+  const extras=ls('extras:'+kid+':'+dk)||[];
+  const score=dayScore(kid,d);
 
-  var custom = [];
-  try{ custom = JSON.parse(lsGet('weekendplan:options')||'[]'); }catch(e){}
-  var allPlans = PLAN_DEFAULTS.concat(custom);
+  // date label
+  document.getElementById('date-label-'+kid).textContent=fmtDate(d);
 
-  var currentPlan = null;
-  try{ currentPlan = JSON.parse(lsGet('weekendplan:current')||'null'); }catch(e){}
-  var nextChooser = lsGet('weekendplan:nextChooser') || 'Darío';
+  // score
+  document.getElementById('pts-'+kid).textContent=Math.max(0,score.total);
+  document.getElementById('pts-'+kid+'-rec').textContent='Recurrentes: '+score.rec;
+  document.getElementById('pts-'+kid+'-extra').textContent='Extras: '+(score.ext>=0?'+':'')+score.ext;
 
-  var html = '';
-
-  if(unlocked){
-    html += '<div class="unlock-banner">🌟 ¡Semana completada! Le toca elegir a <strong>'+escHtml(nextChooser)+'</strong>.</div>';
+  // today recurring
+  const todayList=document.getElementById('today-list-'+kid);
+  const todayAssigns=assigns.filter(a=>matchesRec(a.rec,d));
+  if(todayAssigns.length===0){
+    todayList.innerHTML='<div class="empty"><span class="emoji">😴</span>Sin tareas recurrentes hoy</div>';
   } else {
-    html += '<p class="plan-status">Se desbloquea cuando los dos completen sus tareas y al menos un bono '
-      +WEEK_GOAL+' días de los últimos 7.<br>'
-      +'Darío: '+dWeek+'/7 · Hugo: '+hWeek+'/7</p>';
+    todayList.innerHTML=todayAssigns.map(a=>{
+      const checked=done.includes(a.id);
+      return `<div class="card-row">
+        <div class="check-wrap">
+          <input type="checkbox" id="chk-${kid}-${a.id}" ${checked?'checked':''} onchange="toggleDone('${kid}','${a.id}')">
+          <label for="chk-${kid}-${a.id}"></label>
+        </div>
+        <span class="label ${checked?'done-label':''}">${a.label}</span>
+        <span class="pts-badge positive">+${a.pts}</span>
+      </div>`;
+    }).join('');
   }
 
-  if(currentPlan && currentPlan.plan){
-    html += '<div class="current-plan-box">Plan elegido para este finde: <strong>'+escHtml(currentPlan.plan)+'</strong><br>'
-      +'<span style="font-size:12px;opacity:.8;">Elegido por '+escHtml(currentPlan.chosenBy)+'</span></div>';
+  // extras
+  const extrasList=document.getElementById('extras-list-'+kid);
+  if(extras.length===0){
+    extrasList.innerHTML='<div class="empty"><span class="emoji">✨</span>Sin extras hoy</div>';
+  } else {
+    extrasList.innerHTML=extras.map(e=>`<div class="card-row">
+      <span class="label">${e.label}</span>
+      <span class="pts-badge ${e.type==='task'?'positive':'negative'}">${e.type==='task'?'+'+e.pts:'-'+e.pts}</span>
+      <button class="icon-btn" onclick="deleteExtra('${kid}','${e.id}','${dk}')">🗑</button>
+    </div>`).join('');
   }
 
-  html += '<div class="plan-grid">';
-  allPlans.forEach(function(p){
-    var chosen = currentPlan && currentPlan.plan===p;
-    var cls = 'plan-card'+(chosen?' chosen':'')+((!unlocked&&!chosen)?' locked':'');
-    html += '<div class="'+cls+'" data-plan="'+encodeURIComponent(p)+'">'+escHtml(p)+'</div>';
-  });
-  html += '</div>';
-
-  html += '<div class="add-row"><input type="text" id="new-plan-input" placeholder="Añadir una idea nueva…" />'
-        +'<button id="add-plan-btn">+</button></div>';
-
-  document.getElementById('panel-plan').innerHTML = html;
-
-  document.querySelectorAll('.plan-card').forEach(function(card){
-    card.addEventListener('click', function(){
-      if(!unlocked) return;
-      var plan = decodeURIComponent(card.dataset.plan);
-      var cp = {plan:plan, chosenBy:nextChooser, date:todayKey};
-      lsSet('weekendplan:current', JSON.stringify(cp));
-      var nc = (nextChooser==='Darío') ? 'Hugo' : 'Darío';
-      lsSet('weekendplan:nextChooser', nc);
-      renderPlan();
-    });
-  });
-
-  document.getElementById('add-plan-btn').addEventListener('click', function(){
-    var inp = document.getElementById('new-plan-input');
-    var val = inp.value.trim();
-    if(!val) return;
-    custom.push(val);
-    lsSet('weekendplan:options', JSON.stringify(custom));
-    inp.value='';
-    renderPlan();
-  });
-  document.getElementById('new-plan-input').addEventListener('keydown', function(e){
-    if(e.key==='Enter') document.getElementById('add-plan-btn').click();
-  });
+  // assignments manager
+  renderAssignMgr(kid);
 }
 
-// ── Utils ─────────────────────────────────────────────────────────────────────
-function escHtml(s){
-  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+function deleteExtra(kid,id,dk){
+  let extras=ls('extras:'+kid+':'+dk)||[];
+  extras=extras.filter(e=>e.id!==id);
+  ss('extras:'+kid+':'+dk,extras);
+  renderKid(kid);
 }
 
-// ── Init ──────────────────────────────────────────────────────────────────────
-function init(){
-  document.getElementById('today-label').textContent =
-    today.toLocaleDateString('es-ES',{weekday:'long',day:'numeric',month:'long'});
+function toggleDone(kid,assignId){
+  const dk=dateKey(kidDates[kid]);
+  let done=ls('done:'+kid+':'+dk)||[];
+  if(done.includes(assignId)) done=done.filter(x=>x!==assignId);
+  else done.push(assignId);
+  ss('done:'+kid+':'+dk,done);
+  renderKid(kid);
+}
 
-  KIDS.forEach(function(kid){
-    state[kid.id].today = loadDay(kid.id, todayKey);
-    renderKid(kid);
+// ── ASSIGN MANAGER ──
+function renderAssignMgr(kid){
+  const assigns=ls('assignments:'+kid)||[];
+  const el=document.getElementById('assign-mgr-'+kid);
+  const recLabel={daily:'Diario',lv:'Lun–Vie',fds:'Finde'};
+  if(assigns.length===0){
+    el.innerHTML='<div class="empty" style="padding:14px;">Sin asignaciones</div>';
+    return;
+  }
+  el.innerHTML=assigns.map(a=>`<div class="assign-row">
+    <span class="assign-label">${a.label}</span>
+    <span class="rec-tag">${recLabel[a.rec]||a.rec}</span>
+    <span class="pts-badge positive" style="font-size:11px;">+${a.pts}</span>
+    <button class="icon-btn" onclick="deleteAssign('${kid}','${a.id}')">🗑</button>
+  </div>`).join('');
+}
+
+function deleteAssign(kid,id){
+  let assigns=ls('assignments:'+kid)||[];
+  assigns=assigns.filter(a=>a.id!==id);
+  ss('assignments:'+kid,assigns);
+  renderKid(kid);
+}
+
+// ── CATALOG PAGE ──
+function renderCatalogPage(){
+  const tasks=ls('catalog:tasks')||[];
+  const penalties=ls('catalog:penalties')||[];
+  const assignD=ls('assignments:dario')||[];
+  const assignH=ls('assignments:hugo')||[];
+  const recLabel={daily:'Diario',lv:'Lun–Vie',fds:'Finde'};
+
+  document.getElementById('task-cat-list').innerHTML=
+    tasks.map(t=>`<div class="cat-row">
+      <span class="cat-label">${t.label}</span>
+      <span class="pts-badge positive">+${t.pts}</span>
+      <button class="icon-btn" onclick="deleteCatItem('task','${t.id}')">🗑</button>
+    </div>`).join('');
+
+  const renderAssignList=(assigns,kid)=>assigns.map(a=>`<div class="assign-row">
+    <span class="assign-label">${a.label}</span>
+    <span class="rec-tag">${recLabel[a.rec]||a.rec}</span>
+    <span class="pts-badge positive" style="font-size:11px;">+${a.pts}</span>
+  </div>`).join('');
+
+  const listD=document.getElementById('assign-list-dario');
+  const listH=document.getElementById('assign-list-hugo');
+  if(assignD.length===0) listD.innerHTML='<div class="empty" style="padding:14px;">Sin asignaciones</div>';
+  else listD.innerHTML=renderAssignList(assignD,'dario')+`<button class="add-assign-btn dario-color" onclick="openAssignModal('dario')">＋ Asignar a Darío</button>`;
+  if(assignD.length>0 && !listD.querySelector('.add-assign-btn')){
+    listD.insertAdjacentHTML('beforeend',`<button class="add-assign-btn dario-color" onclick="openAssignModal('dario')">＋ Asignar a Darío</button>`);
+  }
+  if(assignH.length===0) listH.innerHTML=`<div class="empty" style="padding:14px;">Sin asignaciones</div><button class="add-assign-btn hugo-color" onclick="openAssignModal('hugo')">＋ Asignar a Hugo</button>`;
+  else listH.innerHTML=renderAssignList(assignH,'hugo')+`<button class="add-assign-btn hugo-color" onclick="openAssignModal('hugo')">＋ Asignar a Hugo</button>`;
+}
+
+function renderPenaltyPage(){
+  const penalties=ls('catalog:penalties')||[];
+  document.getElementById('penalty-cat-list').innerHTML=
+    penalties.map(p=>`<div class="cat-row">
+      <span class="cat-label">${p.label}</span>
+      <span class="pts-badge negative">−${p.pts}</span>
+      <button class="icon-btn" onclick="deleteCatItem('penalty','${p.id}')">🗑</button>
+    </div>`).join('');
+}
+
+function deleteCatItem(type,id){
+  const key='catalog:'+(type==='task'?'tasks':'penalties');
+  let items=ls(key)||[];
+  items=items.filter(i=>i.id!==id);
+  ss(key,items);
+  if(type==='task') renderCatalogPage(); else renderPenaltyPage();
+}
+
+// ── MODAL: CATALOG ──
+let _catType='task';
+function openCatModal(type){
+  _catType=type;
+  document.getElementById('modal-cat-title').textContent=type==='task'?'Nueva tarea':'Nueva penalización';
+  document.getElementById('cat-label-input').value='';
+  document.getElementById('cat-pts-input').value='10';
+  const btn=document.getElementById('modal-cat-save-btn');
+  btn.className='btn btn-save'+(type==='penalty'?' danger':'');
+  openModal('modal-cat');
+}
+function saveCatItem(){
+  const label=document.getElementById('cat-label-input').value.trim();
+  const pts=parseInt(document.getElementById('cat-pts-input').value)||10;
+  if(!label) return;
+  const key='catalog:'+(_catType==='task'?'tasks':'penalties');
+  const items=ls(key)||[];
+  const id=(_catType==='task'?'ct':'cp')+Date.now();
+  items.push({id,label,pts});
+  ss(key,items);
+  closeModal('modal-cat');
+  if(_catType==='task') renderCatalogPage(); else renderPenaltyPage();
+}
+
+// ── MODAL: ASSIGN ──
+let _assignKid='dario', _assignRec='daily';
+function openAssignModal(kid){
+  _assignKid=kid; _assignRec='daily';
+  document.getElementById('modal-assign-title').textContent='Asignar a '+(kid==='dario'?'Darío':'Hugo');
+  const btn=document.getElementById('modal-assign-save-btn');
+  btn.className='btn btn-save'+(kid==='hugo'?' hugo-save':'');
+  // populate select
+  const tasks=ls('catalog:tasks')||[];
+  document.getElementById('assign-task-select').innerHTML=tasks.map(t=>`<option value="${t.id}">${t.label} (+${t.pts})</option>`).join('');
+  // reset rec
+  document.querySelectorAll('#modal-assign .seg-btn').forEach(b=>{
+    b.classList.toggle('active',b.dataset.rec==='daily');
   });
-  renderPlan();
+  openModal('modal-assign');
+}
+function setRec(rec,btn){
+  _assignRec=rec;
+  document.querySelectorAll('#modal-assign .seg-btn').forEach(b=>b.classList.toggle('active',b===btn));
+}
+function saveAssign(){
+  const tasks=ls('catalog:tasks')||[];
+  const taskId=document.getElementById('assign-task-select').value;
+  const task=tasks.find(t=>t.id===taskId);
+  if(!task) return;
+  const key='assignments:'+_assignKid;
+  const assigns=ls(key)||[];
+  const id='a'+Date.now();
+  assigns.push({id,taskId,label:task.label,pts:task.pts,rec:_assignRec});
+  ss(key,assigns);
+  closeModal('modal-assign');
+  renderKid(_assignKid);
+  renderCatalogPage();
 }
 
-if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('/tareas-verano/sw.js').catch(function(){});
+// ── MODAL: EXTRA ──
+let _extraKid='dario', _extraType='task', _extraSrc='catalog';
+function openExtraModal(kid,type){
+  _extraKid=kid; _extraType=type; _extraSrc='catalog';
+  const isTask=type==='task';
+  document.getElementById('modal-extra-title').textContent=isTask?'Añadir tarea puntual':'Aplicar penalización';
+  const btn=document.getElementById('modal-extra-save-btn');
+  btn.className='btn btn-save'+((!isTask)?' danger':(kid==='hugo'?' hugo-save':''));
+  // populate catalog select
+  const key='catalog:'+(isTask?'tasks':'penalties');
+  const items=ls(key)||[];
+  document.getElementById('extra-cat-select').innerHTML=items.map(i=>`<option value="${i.id}" data-pts="${i.pts}">${i.label} (${isTask?'+':'-'}${i.pts})</option>`).join('');
+  // reset to catalog mode
+  document.querySelectorAll('#modal-extra .seg-btn').forEach(b=>b.classList.toggle('active',b.dataset.src==='catalog'));
+  document.getElementById('extra-catalog-field').style.display='';
+  document.getElementById('extra-free-field').style.display='none';
+  document.getElementById('extra-label-input').value='';
+  document.getElementById('extra-pts-input').value='10';
+  openModal('modal-extra');
+}
+function setExtraSrc(src,btn){
+  _extraSrc=src;
+  document.querySelectorAll('#modal-extra .seg-btn').forEach(b=>b.classList.toggle('active',b===btn));
+  document.getElementById('extra-catalog-field').style.display=src==='catalog'?'':'none';
+  document.getElementById('extra-free-field').style.display=src==='free'?'':'none';
+}
+function saveExtra(){
+  const dk=dateKey(kidDates[_extraKid]);
+  let label,pts;
+  if(_extraSrc==='catalog'){
+    const sel=document.getElementById('extra-cat-select');
+    const opt=sel.options[sel.selectedIndex];
+    label=opt?opt.textContent.split(' (')[0]:'';
+    pts=opt?parseInt(opt.dataset.pts)||10:10;
+  } else {
+    label=document.getElementById('extra-label-input').value.trim();
+    pts=parseInt(document.getElementById('extra-pts-input').value)||10;
+  }
+  if(!label) return;
+  const key='extras:'+_extraKid+':'+dk;
+  const extras=ls(key)||[];
+  extras.push({id:'e'+Date.now(),type:_extraType,label,pts});
+  ss(key,extras);
+  closeModal('modal-extra');
+  renderKid(_extraKid);
 }
 
-init();
+// ── MODAL UTILS ──
+function openModal(id){ document.getElementById(id).classList.add('open'); }
+function closeModal(id){ document.getElementById(id).classList.remove('open'); }
+document.querySelectorAll('.modal-overlay').forEach(m=>{
+  m.addEventListener('click',function(e){ if(e.target===this) closeModal(this.id); });
+});
+
+// ── COLLAPSIBLE ──
+function toggleCollapse(id){
+  const body=document.getElementById(id);
+  const header=body.previousElementSibling;
+  body.classList.toggle('open');
+  header.classList.toggle('open');
+}
+
+// ── INIT ──
+initStorage();
+renderCatalogPage();
+renderKid('dario');
+renderKid('hugo');
+
+// ── SERVICE WORKER ──
+if('serviceWorker' in navigator){
+  window.addEventListener('load',()=>{
+    navigator.serviceWorker.register('/tareas-verano/sw.js').catch(()=>{});
+  });
+}
 </script>
 </body>
 </html>

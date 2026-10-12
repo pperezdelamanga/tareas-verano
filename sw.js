@@ -1,4 +1,4 @@
-const CACHE = 'verano-v1';
+const CACHE = 'tareas-v2';
 const BASE = '/tareas-verano';
 const ASSETS = [
   BASE + '/index.html',
